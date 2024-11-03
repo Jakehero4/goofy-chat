@@ -1,8 +1,4 @@
-// Import the functions needed from Firebase SDK
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, push, onChildAdded } from "firebase/database";
-
-// Firebase configuration (same as what you provided)
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBAs9x7gUbXmlwSo3nFK8BpJGjVLNpFXQA",
   authDomain: "goofy-chat-8fe24.firebaseapp.com",
@@ -15,29 +11,69 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app); // Initialize the Realtime Database
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const database = firebase.database();
+
+// Google Sign-In
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+// Sign in with Google
+document.getElementById('googleSignInBtn').onclick = function() {
+  auth.signInWithPopup(googleProvider)
+    .then((result) => {
+      const user = result.user;
+      console.log('User signed in:', user);
+      document.querySelector('.auth-container').style.display = 'none';
+      document.querySelector('.chat-container').style.display = 'block';
+    })
+    .catch((error) => {
+      console.error('Error during sign-in:', error);
+    });
+};
+
+// Sign Out
+document.getElementById('signOutBtn').onclick = function() {
+  auth.signOut().then(() => {
+    console.log('User signed out');
+    document.querySelector('.auth-container').style.display = 'block';
+    document.querySelector('.chat-container').style.display = 'none';
+  }).catch((error) => {
+    console.error('Error during sign-out:', error);
+  });
+};
+
+// Monitor Auth State
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    document.querySelector('.auth-container').style.display = 'none';
+    document.querySelector('.chat-container').style.display = 'block';
+  } else {
+    document.querySelector('.auth-container').style.display = 'block';
+    document.querySelector('.chat-container').style.display = 'none';
+  }
+});
 
 // Reference to the messages in the database
-const messagesRef = ref(database, "messages");
+const messagesRef = database.ref("messages");
 
 // Listen for new messages added to the database
-onChildAdded(messagesRef, (snapshot) => {
+messagesRef.on("child_added", (snapshot) => {
   const message = snapshot.val();
   displayMessage(message.text);
 });
 
 // Function to send a new message
-function sendMessage() {
+window.sendMessage = function() {
   const messageInput = document.getElementById("messageInput");
   const messageText = messageInput.value;
 
   if (messageText.trim() !== "") {
     // Push the message to the database
-    push(messagesRef, { text: messageText });
+    messagesRef.push({ text: messageText });
     messageInput.value = ""; // Clear the input field
   }
-}
+};
 
 // Function to display messages in the chat window
 function displayMessage(text) {
