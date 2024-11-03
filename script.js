@@ -60,26 +60,67 @@ const messagesRef = database.ref("messages");
 // Listen for new messages added to the database
 messagesRef.on("child_added", (snapshot) => {
   const message = snapshot.val();
-  displayMessage(message.text);
+  displayMessage(message);
 });
 
 // Function to send a new message
 window.sendMessage = function() {
   const messageInput = document.getElementById("messageInput");
   const messageText = messageInput.value;
+  const user = auth.currentUser; // Get the current user
 
-  if (messageText.trim() !== "") {
-    // Push the message to the database
-    messagesRef.push({ text: messageText });
+  if (messageText.trim() !== "" && user) {
+    // Push the message to the database with user details and timestamp
+    messagesRef.push({
+      text: messageText,
+      username: user.displayName,
+      profilePic: user.photoURL,
+      timestamp: new Date().toISOString() // Add a timestamp
+    });
     messageInput.value = ""; // Clear the input field
   }
 };
 
-// Function to display messages in the chat window
-function displayMessage(text) {
+function displayMessage(message) {
   const messagesContainer = document.getElementById("messages");
-  const messageElement = document.createElement("p");
-  messageElement.textContent = text;
+  const messageElement = document.createElement("div");
+  messageElement.classList.add("message");
+
+  // Create a user info section
+  const userInfo = document.createElement("div");
+  userInfo.classList.add("user-info");
+
+  // Profile picture
+  const profilePic = document.createElement("img");
+  profilePic.src = message.profilePic;
+  profilePic.alt = message.username;
+  profilePic.classList.add("profile-pic");
+
+  // Username
+  const usernameElement = document.createElement("span");
+  usernameElement.textContent = message.username;
+  usernameElement.classList.add("username");
+
+  // Append profile picture and username to user info
+  userInfo.appendChild(profilePic);
+  userInfo.appendChild(usernameElement);
+
+  // Timestamp
+  const timestampElement = document.createElement("span");
+  timestampElement.textContent = new Date().toLocaleTimeString(); // Adjust this according to your timestamp format
+  timestampElement.classList.add("timestamp");
+
+  // Message text
+  const textElement = document.createElement("p");
+  textElement.textContent = message.text;
+  textElement.classList.add("message-text");
+
+  // Append user info, timestamp, and text to the message element
+  messageElement.appendChild(userInfo);
+  messageElement.appendChild(timestampElement); // Timestamp goes above the message text
+  messageElement.appendChild(textElement);
+
+  // Append the message element to the containers
   messagesContainer.appendChild(messageElement);
 
   // Scroll to the bottom of the chat

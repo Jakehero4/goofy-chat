@@ -1,64 +1,115 @@
-* {
-  box-sizing: border-box;
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f0f0f0; /* Light background for the whole page */
   margin: 0;
-  padding: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  height: 100vh; /* Full viewport height */
 }
 
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-family: Arial, sans-serif;
-  background-color: #f0f2f5;
+.auth-container, .chat-container {
+  text-align: center; /* Center align the text */
 }
 
 .chat-container {
-  width: 300px;
-  max-width: 90%;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  overflow: hidden;
-  background: white;
+  max-width: 600px;
+  width: 100%; /* Full width up to max-width */
+  background-color: #fff; /* White background for chat area */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  overflow: hidden; /* Prevents overflow from rounded corners */
+  padding: 20px; /* Padding for inner content */
 }
 
 .messages {
-  flex-grow: 1;
+  border: 1px solid #ccc;
   padding: 10px;
+  height: 500px; /* Increased height for more visibility */
   overflow-y: auto;
-  border-bottom: 1px solid #ddd;
-  height: 400px;
+  background-color: #f9f9f9;
+  border-radius: 8px; /* Match corners with container */
+  margin-bottom: 10px; /* Space below messages */
 }
 
-.messages p {
-  background: #e4e6eb;
-  border-radius: 5px;
-  padding: 8px;
-  margin: 4px 0;
-  word-wrap: break-word;
+.message {
+  display: flex;
+  flex-direction: row; /* Change to row to align items horizontally */
+  align-items: center; /* Center align items vertically */
+  margin-bottom: 5px; /* Further reduced space between messages */
+  padding: 3px; /* Reduced padding for shorter hover box */
+  border-radius: 6px; /* Rounded message box */
+  transition: background-color 0.3s; /* Smooth background transition */
+  max-height: 80px; /* Optional: set a max height for the message box */
 }
 
-#messageInput {
-  padding: 10px;
-  border: none;
-  border-top: 1px solid #ddd;
-  outline: none;
-  width: 100%;
-  font-size: 16px;
+.message:hover {
+  background-color: #e8e8e8; /* Highlight on hover */
+}
+
+.user-info {
+  display: flex;
+  align-items: center; /* Align profile pic and username vertically */
+  margin-bottom: 2px; /* Reduced space between user info and timestamp */
+}
+
+.profile-pic {
+  width: 60px; 
+  height: 60px; 
+  border-radius: 50%; 
+  margin-right: 10px; /* Space between profile pic and message text */
+  margin-top: 0; /* Adjusted to align vertically */
+  border: 2px solid #007bff; /* Blue border around profile picture */
+}
+
+.username {
+  font-weight: bold;
+  color: #007bff; /* Blue color for username */
+}
+
+.timestamp {
+  font-size: 0.8em; /* Smaller font for timestamp */
+  color: #888; /* Gray color for timestamp */
+  margin-left: -80px; /* Space between message text and timestamp */
+  margin-bottom: 10px; /* Align timestamp properly */
+  align-self: flex-end; /* Align timestamp at the end */
+}
+
+.message-text {
+  word-wrap: break-word; /* Wrap long words to prevent overflow */
+  color: #333; /* Darker color for text */
+  margin-left: 20px; /* Reset left margin */
+  margin-top: 20px; /* Remove additional space */
+  max-height: 50px; /* Optional: set a max height for the message text */
+  overflow: hidden; /* Prevent overflow if the message is too long */
 }
 
 button {
-  padding: 10px;
-  background: #007bff;
-  color: white;
+  background-color: #007bff; /* Primary button color */
+  color: white; /* Button text color */
   border: none;
-  cursor: pointer;
-  width: 100%;
-  font-size: 16px;
+  padding: 10px 20px; /* Padding for button */
+  border-radius: 5px; /* Rounded button */
+  cursor: pointer; /* Pointer on hover */
+  transition: background-color 0.3s; /* Smooth transition */
+  margin: 5px; /* Space between buttons */
 }
 
 button:hover {
-  background: #0056b3;
+  background-color: #0056b3; /* Darker shade on hover */
+}
+
+input[type="text"] {
+  width: calc(100% - 22px); /* Full width input */
+  padding: 10px; /* Padding for input */
+  border: 1px solid #ccc; /* Input border */
+  border-radius: 5px; /* Rounded input */
+  margin-bottom: 10px; /* Space below input */
+  transition: border-color 0.3s; /* Transition for border color */
+}
+
+input[type="text"]:focus {
+  border-color: #007bff; /* Border color on focus */
+  outline: none; /* Remove outline */
 }
