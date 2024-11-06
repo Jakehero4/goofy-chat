@@ -1,4 +1,4 @@
-// Firebase configuration
+// Firebase configuration (replace with your own Firebase project details)
 const firebaseConfig = {
   apiKey: "AIzaSyBAs9x7gUbXmlwSo3nFK8BpJGjVLNpFXQA",
   authDomain: "goofy-chat-8fe24.firebaseapp.com",
@@ -24,8 +24,7 @@ document.getElementById('googleSignInBtn').onclick = function() {
     .then((result) => {
       const user = result.user;
       console.log('User signed in:', user);
-      document.querySelector('.auth-container').style.display = 'none';
-      document.querySelector('.chat-container').style.display = 'block';
+      toggleChatUI(user);
     })
     .catch((error) => {
       console.error('Error during sign-in:', error);
@@ -36,8 +35,7 @@ document.getElementById('googleSignInBtn').onclick = function() {
 document.getElementById('signOutBtn').onclick = function() {
   auth.signOut().then(() => {
     console.log('User signed out');
-    document.querySelector('.auth-container').style.display = 'block';
-    document.querySelector('.chat-container').style.display = 'none';
+    toggleAuthUI();
   }).catch((error) => {
     console.error('Error during sign-out:', error);
   });
@@ -46,11 +44,9 @@ document.getElementById('signOutBtn').onclick = function() {
 // Monitor Auth State
 auth.onAuthStateChanged((user) => {
   if (user) {
-    document.querySelector('.auth-container').style.display = 'none';
-    document.querySelector('.chat-container').style.display = 'block';
+    toggleChatUI(user);
   } else {
-    document.querySelector('.auth-container').style.display = 'block';
-    document.querySelector('.chat-container').style.display = 'none';
+    toggleAuthUI();
   }
 });
 
@@ -67,7 +63,7 @@ messagesRef.on("child_added", (snapshot) => {
 window.sendMessage = function() {
   const messageInput = document.getElementById("messageInput");
   const messageText = messageInput.value;
-  const user = auth.currentUser; // Get the current user
+  const user = auth.currentUser;
 
   if (messageText.trim() !== "" && user) {
     // Push the message to the database with user details and timestamp
@@ -75,12 +71,36 @@ window.sendMessage = function() {
       text: messageText,
       username: user.displayName,
       profilePic: user.photoURL,
-      timestamp: new Date().toISOString() // Add a timestamp
+      timestamp: firebase.database.ServerValue.TIMESTAMP // Use Firebase server timestamp
     });
     messageInput.value = ""; // Clear the input field
   }
 };
 
+// Toggle UI visibility for authentication and chat
+function toggleAuthUI() {
+  document.querySelector('.auth-container').style.display = 'block';
+  document.querySelector('.chat-container').style.display = 'none';
+}
+
+function toggleChatUI(user) {
+  document.querySelector('.auth-container').style.display = 'none';
+  document.querySelector('.chat-container').style.display = 'block';
+  document.getElementById('signOutBtn').style.display = 'inline-block'; // Show sign-out button
+  loadMessages();
+}
+
+// Load messages from Firebase
+function loadMessages() {
+  messagesRef.once("value", (snapshot) => {
+    snapshot.forEach((childSnapshot) => {
+      const message = childSnapshot.val();
+      displayMessage(message);
+    });
+  });
+}
+
+// Function to display a single message
 function displayMessage(message) {
   const messagesContainer = document.getElementById("messages");
   const messageElement = document.createElement("div");
@@ -92,7 +112,7 @@ function displayMessage(message) {
 
   // Profile picture
   const profilePic = document.createElement("img");
-  profilePic.src = message.profilePic;
+  profilePic.src = message.profilePic || "default-profile-pic.png"; // Fallback image if no profile pic
   profilePic.alt = message.username;
   profilePic.classList.add("profile-pic");
 
@@ -107,7 +127,7 @@ function displayMessage(message) {
 
   // Timestamp
   const timestampElement = document.createElement("span");
-  timestampElement.textContent = new Date().toLocaleTimeString(); // Adjust this according to your timestamp format
+  timestampElement.textContent = formatTimestamp(message.timestamp);
   timestampElement.classList.add("timestamp");
 
   // Message text
@@ -117,12 +137,18 @@ function displayMessage(message) {
 
   // Append user info, timestamp, and text to the message element
   messageElement.appendChild(userInfo);
-  messageElement.appendChild(timestampElement); // Timestamp goes above the message text
+  messageElement.appendChild(timestampElement);
   messageElement.appendChild(textElement);
 
-  // Append the message element to the containers
+  // Append the message element to the messages container
   messagesContainer.appendChild(messageElement);
 
   // Scroll to the bottom of the chat
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Function to format timestamps
+function formatTimestamp(timestamp) {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString(); // You can customize the date format here
 }
