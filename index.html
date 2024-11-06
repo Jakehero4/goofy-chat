@@ -32,10 +32,19 @@
     <button onclick="sendMessage()">Send</button>
   </div>
 
+  <!-- User Settings Form (Username & Profile Picture) -->
+  <div class="user-settings" style="display: none;">
+    <h3>Set your Username and Profile Picture</h3>
+    <input type="text" id="usernameInput" placeholder="Enter username" />
+    <input type="file" id="profilePicInput" accept="image/*" />
+    <button id="saveProfileBtn">Save</button>
+  </div>
+
   <!-- Firebase SDKs via CDN -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
   <!-- Main Script -->
   <script src="script.js"></script>
