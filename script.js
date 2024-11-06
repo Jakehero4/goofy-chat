@@ -1,4 +1,4 @@
-// Firebase configuration (replace with your own Firebase project details)
+// Firebase configuration (use your actual Firebase project details here)
 const firebaseConfig = {
   apiKey: "AIzaSyBAs9x7gUbXmlwSo3nFK8BpJGjVLNpFXQA",
   authDomain: "goofy-chat-8fe24.firebaseapp.com",
@@ -31,6 +31,38 @@ document.getElementById('googleSignInBtn').onclick = function() {
     });
 };
 
+// Sign up with email and password
+document.getElementById('emailSignUpBtn').onclick = function() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  auth.createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      console.log('User signed up:', user);
+      toggleChatUI(user); // Go to chat room after signup
+    })
+    .catch((error) => {
+      console.error('Error during sign-up:', error);
+      alert(error.message); // Show error to the user
+    });
+};
+
+// Sign in with email and password
+document.getElementById('emailSignInBtn').onclick = function() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  auth.signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      console.log('User signed in:', user);
+      toggleChatUI(user);
+    })
+    .catch((error) => {
+      console.error('Error during sign-in:', error);
+      alert(error.message); // Show error to the user
+    });
+};
+
 // Sign Out
 document.getElementById('signOutBtn').onclick = function() {
   auth.signOut().then(() => {
@@ -50,34 +82,7 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
-// Reference to the messages in the database
-const messagesRef = database.ref("messages");
-
-// Listen for new messages added to the database
-messagesRef.on("child_added", (snapshot) => {
-  const message = snapshot.val();
-  displayMessage(message);
-});
-
-// Function to send a new message
-window.sendMessage = function() {
-  const messageInput = document.getElementById("messageInput");
-  const messageText = messageInput.value;
-  const user = auth.currentUser;
-
-  if (messageText.trim() !== "" && user) {
-    // Push the message to the database with user details and timestamp
-    messagesRef.push({
-      text: messageText,
-      username: user.displayName,
-      profilePic: user.photoURL,
-      timestamp: firebase.database.ServerValue.TIMESTAMP // Use Firebase server timestamp
-    });
-    messageInput.value = ""; // Clear the input field
-  }
-};
-
-// Toggle UI visibility for authentication and chat
+// Function to toggle visibility between authentication and chat UI
 function toggleAuthUI() {
   document.querySelector('.auth-container').style.display = 'block';
   document.querySelector('.chat-container').style.display = 'none';
@@ -90,65 +95,67 @@ function toggleChatUI(user) {
   loadMessages();
 }
 
-// Load messages from Firebase
+// Function to load messages from Firebase
 function loadMessages() {
-  messagesRef.once("value", (snapshot) => {
-    snapshot.forEach((childSnapshot) => {
-      const message = childSnapshot.val();
-      displayMessage(message);
-    });
+  const messagesRef = database.ref("messages");
+  messagesRef.on("child_added", (snapshot) => {
+    const message = snapshot.val();
+    displayMessage(message);
   });
 }
 
-// Function to display a single message
+// Function to send a message
+window.sendMessage = function() {
+  const messageInput = document.getElementById("messageInput");
+  const messageText = messageInput.value;
+  const user = auth.currentUser;
+
+  if (messageText.trim() !== "" && user) {
+    const messagesRef = database.ref("messages");
+    messagesRef.push({
+      text: messageText,
+      username: user.displayName || user.email,
+      profilePic: user.photoURL,
+      timestamp: firebase.database.ServerValue.TIMESTAMP // Store timestamp on server
+    });
+    messageInput.value = ""; // Clear the input field
+  }
+};
+
+// Function to display a message
 function displayMessage(message) {
   const messagesContainer = document.getElementById("messages");
   const messageElement = document.createElement("div");
   messageElement.classList.add("message");
 
-  // Create a user info section
+  // Create user info section
   const userInfo = document.createElement("div");
   userInfo.classList.add("user-info");
 
-  // Profile picture
   const profilePic = document.createElement("img");
-  profilePic.src = message.profilePic || "default-profile-pic.png"; // Fallback image if no profile pic
+  profilePic.src = message.profilePic || "default-profile-pic.png";
   profilePic.alt = message.username;
   profilePic.classList.add("profile-pic");
 
-  // Username
   const usernameElement = document.createElement("span");
   usernameElement.textContent = message.username;
   usernameElement.classList.add("username");
 
-  // Append profile picture and username to user info
   userInfo.appendChild(profilePic);
   userInfo.appendChild(usernameElement);
 
-  // Timestamp
   const timestampElement = document.createElement("span");
-  timestampElement.textContent = formatTimestamp(message.timestamp);
+  timestampElement.textContent = new Date(message.timestamp).toLocaleTimeString();
   timestampElement.classList.add("timestamp");
 
-  // Message text
   const textElement = document.createElement("p");
   textElement.textContent = message.text;
   textElement.classList.add("message-text");
 
-  // Append user info, timestamp, and text to the message element
   messageElement.appendChild(userInfo);
   messageElement.appendChild(timestampElement);
   messageElement.appendChild(textElement);
 
-  // Append the message element to the messages container
   messagesContainer.appendChild(messageElement);
-
-  // Scroll to the bottom of the chat
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-// Function to format timestamps
-function formatTimestamp(timestamp) {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString(); // You can customize the date format here
 }
