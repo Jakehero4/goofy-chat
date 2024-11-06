@@ -14,6 +14,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const database = firebase.database();
+const storage = firebase.storage();
 
 // Google Sign-In
 const googleProvider = new firebase.auth.GoogleAuthProvider();
@@ -77,6 +78,7 @@ document.getElementById('signOutBtn').onclick = function() {
 auth.onAuthStateChanged((user) => {
   if (user) {
     toggleChatUI(user);
+    showUserSettings(user);  // Show the user settings to set profile
   } else {
     toggleAuthUI();
   }
@@ -86,6 +88,7 @@ auth.onAuthStateChanged((user) => {
 function toggleAuthUI() {
   document.querySelector('.auth-container').style.display = 'block';
   document.querySelector('.chat-container').style.display = 'none';
+  document.querySelector('.user-settings').style.display = 'none';
 }
 
 function toggleChatUI(user) {
@@ -158,4 +161,69 @@ function displayMessage(message) {
 
   messagesContainer.appendChild(messageElement);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Handle username and profile picture update
+document.getElementById('saveProfileBtn').onclick = function() {
+  const username = document.getElementById('usernameInput').value;
+  const profilePicInput = document.getElementById('profilePicInput').files[0];
+  
+  if (username.trim() === "") {
+    alert("Please enter a username.");
+    return;
+  }
+  
+  const user = auth.currentUser;
+
+  // If the user selected a profile picture
+  if (profilePicInput) {
+    const storageRef = firebase.storage().ref();
+    const profilePicRef = storageRef.child('profilePics/' + user.uid + '.jpg');
+
+    // Upload the profile picture to Firebase Storage
+    profilePicRef.put(profilePicInput).then(() => {
+      profilePicRef.getDownloadURL().then((url) => {
+        // Save the username and profile picture URL to Firebase Realtime Database
+        database.ref('users/' + user.uid).set({
+          username: username,
+          profilePic: url
+        }).then(() => {
+          user.updateProfile({
+            displayName: username,
+            photoURL: url
+          }).then(() => {
+            console.log("User profile updated");
+            toggleChatUI(user);  // Refresh the chat UI with new profile
+          }).catch(error => {
+            console.error("Error updating user profile", error);
+          });
+        });
+      }).catch((error) => {
+        console.error("Error getting profile picture URL", error);
+      });
+    }).catch((error) => {
+      console.error("Error uploading profile picture", error);
+    });
+  } else {
+    // Save username only if no profile picture was selected
+    database.ref('users/' + user.uid).set({
+      username: username,
+      profilePic: user.photoURL  // Use existing photoURL if no new picture
+    }).then(() => {
+      user.updateProfile({
+        displayName: username
+      }).then(() => {
+        console.log("User profile updated");
+        toggleChatUI(user);  // Refresh the chat UI with new username
+      }).catch(error => {
+        console.error("Error updating user profile", error);
+      });
+    });
+  }
+};
+
+// Show user settings after login
+function showUserSettings(user) {
+  document.querySelector('.user-settings').style.display = 'block';
+  document.getElementById('usernameInput').value = user.displayName || '';  // Set current username
 }
