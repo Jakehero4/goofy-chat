@@ -78,7 +78,8 @@ document.getElementById('signOutBtn').onclick = function() {
 auth.onAuthStateChanged((user) => {
   if (user) {
     toggleChatUI(user);
-    showUserSettings(user);  // Show the user settings to set profile
+    loadMessages();
+    showUserSettings(user); // Show the user settings to set profile
   } else {
     toggleAuthUI();
   }
@@ -88,6 +89,7 @@ auth.onAuthStateChanged((user) => {
 function toggleAuthUI() {
   document.querySelector('.auth-container').style.display = 'block';
   document.querySelector('.chat-container').style.display = 'none';
+  document.querySelector('.private-chat-container').style.display = 'none';
   document.querySelector('.user-settings').style.display = 'none';
 }
 
@@ -98,7 +100,7 @@ function toggleChatUI(user) {
   loadMessages();
 }
 
-// Function to load messages from Firebase
+// Function to load public messages from Firebase
 function loadMessages() {
   const messagesRef = database.ref("messages");
   messagesRef.on("child_added", (snapshot) => {
@@ -107,7 +109,7 @@ function loadMessages() {
   });
 }
 
-// Function to send a message
+// Function to send a public message
 window.sendMessage = function() {
   const messageInput = document.getElementById("messageInput");
   const messageText = messageInput.value;
@@ -119,7 +121,8 @@ window.sendMessage = function() {
       text: messageText,
       username: user.displayName || user.email,
       profilePic: user.photoURL,
-      timestamp: firebase.database.ServerValue.TIMESTAMP // Store timestamp on server
+      timestamp: firebase.database.ServerValue.TIMESTAMP, // Store timestamp on server
+      senderId: user.uid,
     });
     messageInput.value = ""; // Clear the input field
   }
@@ -163,67 +166,80 @@ function displayMessage(message) {
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Handle username and profile picture update
-document.getElementById('saveProfileBtn').onclick = function() {
-  const username = document.getElementById('usernameInput').value;
-  const profilePicInput = document.getElementById('profilePicInput').files[0];
-  
-  if (username.trim() === "") {
-    alert("Please enter a username.");
-    return;
-  }
-  
+// Function to send a private message
+window.sendPrivateMessage = function(receiverId) {
+  const privateMessageInput = document.getElementById("privateMessageInput");
+  const messageText = privateMessageInput.value;
   const user = auth.currentUser;
 
-  // If the user selected a profile picture
-  if (profilePicInput) {
-    const storageRef = firebase.storage().ref();
-    const profilePicRef = storageRef.child('profilePics/' + user.uid + '.jpg');
+  if (messageText.trim() !== "" && user) {
+    const privateMessagesRef = database.ref("privateMessages");
+    const messageData = {
+      text: messageText,
+      username: user.displayName || user.email,
+      senderId: user.uid,
+      receiverId: receiverId,
+      timestamp: firebase.database.ServerValue.TIMESTAMP,
+    };
 
-    // Upload the profile picture to Firebase Storage
-    profilePicRef.put(profilePicInput).then(() => {
-      profilePicRef.getDownloadURL().then((url) => {
-        // Save the username and profile picture URL to Firebase Realtime Database
-        database.ref('users/' + user.uid).set({
-          username: username,
-          profilePic: url
-        }).then(() => {
-          user.updateProfile({
-            displayName: username,
-            photoURL: url
-          }).then(() => {
-            console.log("User profile updated");
-            toggleChatUI(user);  // Refresh the chat UI with new profile
-          }).catch(error => {
-            console.error("Error updating user profile", error);
-          });
-        });
-      }).catch((error) => {
-        console.error("Error getting profile picture URL", error);
-      });
-    }).catch((error) => {
-      console.error("Error uploading profile picture", error);
-    });
-  } else {
-    // Save username only if no profile picture was selected
-    database.ref('users/' + user.uid).set({
-      username: username,
-      profilePic: user.photoURL  // Use existing photoURL if no new picture
-    }).then(() => {
-      user.updateProfile({
-        displayName: username
-      }).then(() => {
-        console.log("User profile updated");
-        toggleChatUI(user);  // Refresh the chat UI with new username
-      }).catch(error => {
-        console.error("Error updating user profile", error);
-      });
-    });
+    privateMessagesRef.child(user.uid).child(receiverId).push(messageData);
+    privateMessagesRef.child(receiverId).child(user.uid).push(messageData);
+    
+    privateMessageInput.value = "";
   }
 };
 
-// Show user settings after login
-function showUserSettings(user) {
-  document.querySelector('.user-settings').style.display = 'block';
-  document.getElementById('usernameInput').value = user.displayName || '';  // Set current username
+// Function to load private messages between the current user and a selected receiver
+function loadPrivateMessages(receiverId) {
+  const user = auth.currentUser;
+  const privateMessagesRef = database.ref("privateMessages");
+
+  privateMessagesRef.child(user.uid).child(receiverId).on("child_added", function(snapshot) {
+    const message = snapshot.val();
+    displayPrivateMessage(message);
+  });
+}
+
+// Function to display a private message
+function displayPrivateMessage(message) {
+  const privateMessagesContainer = document.getElementById("privateMessages");
+  const messageElement = document.createElement("div");
+  messageElement.classList.add("message");
+
+  const userInfo = document.createElement("div");
+  userInfo.classList.add("user-info");
+
+  const profilePic = document.createElement("img");
+  profilePic.src = message.profilePic || "default-profile-pic.png";
+  profilePic.alt = message.username;
+  profilePic.classList.add("profile-pic");
+
+  const usernameElement = document.createElement("span");
+  usernameElement.textContent = message.username;
+  usernameElement.classList.add("username");
+
+  userInfo.appendChild(profilePic);
+  userInfo.appendChild(usernameElement);
+
+  const timestampElement = document.createElement("span");
+  timestampElement.textContent = new Date(message.timestamp).toLocaleTimeString();
+  timestampElement.classList.add("timestamp");
+
+  const textElement = document.createElement("p");
+  textElement.textContent = message.text;
+  textElement.classList.add("message-text");
+
+  messageElement.appendChild(userInfo);
+  messageElement.appendChild(timestampElement);
+  messageElement.appendChild(textElement);
+
+  privateMessagesContainer.appendChild(messageElement);
+  privateMessagesContainer.scrollTop = privateMessagesContainer.scrollHeight;
+}
+
+// Select a user to start a private chat
+function startPrivateChat(receiverId) {
+  document.querySelector('.chat-container').style.display = 'none';
+  document.querySelector('.private-chat-container').style.display = 'block';
+  loadPrivateMessages(receiverId);
 }
