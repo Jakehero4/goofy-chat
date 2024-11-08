@@ -98,6 +98,7 @@ function toggleChatUI(user) {
   document.querySelector('.chat-container').style.display = 'block';
   document.getElementById('signOutBtn').style.display = 'inline-block'; // Show sign-out button
   loadMessages();
+  loadUsersList(); // Load list of users to chat privately
 }
 
 // Function to load public messages from Firebase
@@ -167,10 +168,11 @@ function displayMessage(message) {
 }
 
 // Function to send a private message
-window.sendPrivateMessage = function(receiverId) {
+window.sendPrivateMessage = function() {
   const privateMessageInput = document.getElementById("privateMessageInput");
   const messageText = privateMessageInput.value;
   const user = auth.currentUser;
+  const receiverId = document.getElementById('privateMessageInput').getAttribute('data-receiver-id');
 
   if (messageText.trim() !== "" && user) {
     const privateMessagesRef = database.ref("privateMessages");
@@ -185,7 +187,7 @@ window.sendPrivateMessage = function(receiverId) {
     privateMessagesRef.child(user.uid).child(receiverId).push(messageData);
     privateMessagesRef.child(receiverId).child(user.uid).push(messageData);
     
-    privateMessageInput.value = "";
+    privateMessageInput.value = ""; // Clear the input field
   }
 };
 
@@ -241,5 +243,35 @@ function displayPrivateMessage(message) {
 function startPrivateChat(receiverId) {
   document.querySelector('.chat-container').style.display = 'none';
   document.querySelector('.private-chat-container').style.display = 'block';
+  document.getElementById('privateMessageInput').setAttribute('data-receiver-id', receiverId);
   loadPrivateMessages(receiverId);
+}
+
+// Load users list for private chat
+function loadUsersList() {
+  const usersListContainer = document.getElementById("usersList");
+  const usersRef = database.ref("users");
+
+  usersRef.once("value").then(function(snapshot) {
+    usersListContainer.innerHTML = ''; // Clear the existing list
+
+    snapshot.forEach(function(childSnapshot) {
+      const user = childSnapshot.val();
+      const userItem = document.createElement("div");
+      userItem.classList.add("user-item");
+
+      const usernameElement = document.createElement("span");
+      usernameElement.textContent = user.username;
+      userItem.appendChild(usernameElement);
+
+      const privateMessageButton = document.createElement("button");
+      privateMessageButton.textContent = "Send Private Message";
+      privateMessageButton.onclick = function() {
+        startPrivateChat(user.uid);
+      };
+
+      userItem.appendChild(privateMessageButton);
+      usersListContainer.appendChild(userItem);
+    });
+  });
 }
