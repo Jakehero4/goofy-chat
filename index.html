@@ -25,11 +25,20 @@
     <button id="signOutBtn" style="display: none;">Sign Out</button>
   </div>
   
+  <!-- Chat UI -->
   <div class="chat-container" style="display: none;">
     <h2>Chat Room</h2>
     <div id="messages" class="messages"></div>
     <input type="text" id="messageInput" placeholder="Type your message..." />
     <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <!-- Private Chat UI -->
+  <div class="private-chat-container" style="display: none;">
+    <h2>Private Chat</h2>
+    <div id="privateMessages" class="messages"></div>
+    <input type="text" id="privateMessageInput" placeholder="Type your private message..." />
+    <button onclick="sendPrivateMessage()">Send Private Message</button>
   </div>
 
   <!-- User Settings Form (Username & Profile Picture) -->
