@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Authentication UI -->
   <div class="auth-container">
     <h1>Welcome to Chat App</h1>
 
@@ -28,6 +29,7 @@
   <!-- Chat UI -->
   <div class="chat-container" style="display: none;">
     <h2>Chat Room</h2>
+    <div id="usersList"></div> <!-- List of users to chat with privately -->
     <div id="messages" class="messages"></div>
     <input type="text" id="messageInput" placeholder="Type your message..." />
     <button onclick="sendMessage()">Send</button>
